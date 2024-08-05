@@ -12,12 +12,13 @@ make update     - Update dependencies via Poetry and output resulting `requireme
 make format     - Run Python code formatter & sort dependencies.
 make lint       - Check code formatting with flake8.
 make clean      - Remove extraneous compiled files, caches, logs, etc.
+make test       - Run automated tests with pytest and coverage report.
 
 endef
 export HELP
 
 
-.PHONY: run install deploy update format lint clean help
+.PHONY: run install deploy update format lint clean help test
 
 all help:
 	@echo "$$HELP"
@@ -30,23 +31,20 @@ $(VIRTUAL_ENV):
 		python3 -m venv $(VIRTUAL_ENV); \
 	fi
 
-.PHONY: run
 run: env
 	$(LOCAL_PYTHON) -m main
 
-.PHONY: install
 install: env
 	$(LOCAL_PYTHON) -m pip install --upgrade pip setuptools wheel && \
 	$(LOCAL_PYTHON) -m pip install -r requirements.txt && \
 	npm i -g less && \
 	echo Installed dependencies in \`${VIRTUAL_ENV}\`;
 
-.PHONY: deploy
-deploy:
-	make install && \
-	make run
+# Note: The 'deploy' target is already declared as a phony target above.
+# deploy:
+#   make install && \
+#   make run
 
-.PHONY: test
 test: env
 	$(LOCAL_PYTHON) -m \
 		coverage run -m pytest -vv \
@@ -54,19 +52,16 @@ test: env
 		coverage html --title='Coverage Report' -d .reports && \
 		open .reports/index.html
 
-.PHONY: update
 update: env
 	$(LOCAL_PYTHON) -m pip install --upgrade pip setuptools wheel && \
 	poetry update && \
 	poetry export -f requirements.txt --output requirements.txt --without-hashes && \
 	echo Installed dependencies in \`${VIRTUAL_ENV}\`;
 
-.PHONY: format
 format: env
 	$(LOCAL_PYTHON) -m isort --multi-line=3 . && \
 	$(LOCAL_PYTHON) -m black .
 
-.PHONY: lint
 lint: env
 	$(LOCAL_PYTHON) -m flake8 . --count \
 			--select=E9,F63,F7,F82 \
@@ -74,7 +69,6 @@ lint: env
 			--show-source \
 			--statistics
 
-.PHONY: clean
 clean:
 	find . -name '.coverage' -delete && \
 	find . -name '*.pyc' -delete \
@@ -90,4 +84,4 @@ clean:
 	find . -type d -wholename '**/.pytest_cache' -exec rm -rf {} + && \
 	find . -type d -wholename '**/*.log' -exec rm -rf {} + && \
 	find . -type d -wholename './.reports/*' -exec rm -rf {} + && \
-	find . -type d -wholename '**/.webassets-cache' -exec rm -rf {} +
+	find . -type d -wholename '**/.webassets-cache' -exec rm -rf {} + 
